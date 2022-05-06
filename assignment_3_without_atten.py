@@ -305,7 +305,7 @@ def train():
 
     #Early stopping to stop the epoch if the accuracy is not increasing 
     earlystopping = EarlyStopping(
-        monitor="val_loss", min_delta=0.1, patience=5, verbose=2, mode="auto"
+        monitor="val_loss", min_delta=0.1, patience=2, verbose=2, mode="auto"
     )
 
     model.fit(
