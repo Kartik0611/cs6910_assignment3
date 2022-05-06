@@ -185,7 +185,7 @@ def DataProcessing(DATAPATH,source_lang = 'en', target_lang = "ta"):
 
 def build_configurable_model(cell_type,srcChar2Int,numEncoders,latentDim,dropout,tgtChar2Int,numDecoders,hidden):       
     if cell_type == "RNN":
-        # encoder
+        # one encoder RNN which sequentially encodes the input character sequence (Latin)
         encoderInput = Input(shape=(None, len(srcChar2Int)))
         encoderOutput = encoderInput
         for i in range(1, numEncoders + 1):
@@ -198,7 +198,7 @@ def build_configurable_model(cell_type,srcChar2Int,numEncoders,latentDim,dropout
             encoderOutput, state = encoder(encoderInput)
         encoderState = [state]
 
-        # decoder
+         # one decoder which takes the last state of the encoder as input and produces one output character at a time (Devanagari).
         decoderInput = Input(shape=(None, len(tgtChar2Int)))
         decoderOutput = decoderInput
         for i in range(1, numDecoders + 1):
@@ -220,7 +220,7 @@ def build_configurable_model(cell_type,srcChar2Int,numEncoders,latentDim,dropout
         return model
     
     elif cell_type == "LSTM":
-        # encoder
+        # one encoder RNN which sequentially encodes the input character sequence (Latin)
         encoderInput = Input(shape=(None, len(srcChar2Int)))
         encoderOutput = encoderInput
         for i in range(1, numEncoders + 1):
@@ -233,7 +233,7 @@ def build_configurable_model(cell_type,srcChar2Int,numEncoders,latentDim,dropout
             encoderOutput, state_h, state_c = encoder(encoderOutput)
         encoderState = [state_h, state_c]
 
-        # decoder
+         # one decoder which takes the last state of the encoder as input and produces one output character at a time (Devanagari).
         decoderInput = Input(shape=(None, len(tgtChar2Int)))
         decoderOutput = decoderInput
         for i in range(1, numDecoders + 1):
@@ -257,7 +257,7 @@ def build_configurable_model(cell_type,srcChar2Int,numEncoders,latentDim,dropout
         return model
     
     elif cell_type == "GRU":
-        # encoder
+        # one encoder RNN which sequentially encodes the input character sequence (Latin)
         encoderInput = Input(shape=(None, len(srcChar2Int)))
         encoderOutput = encoderInput
         for i in range(1, numEncoders + 1):
@@ -270,20 +270,17 @@ def build_configurable_model(cell_type,srcChar2Int,numEncoders,latentDim,dropout
             encoderOutput, state = encoder(encoderInput)
         encoderState = [state]
 
-        # decoder
+         # one decoder which takes the last state of the encoder as input and produces one output character at a time (Devanagari).
         decoderInput = Input(shape=(None, len(tgtChar2Int)))
         decoderOutput = decoderInput
         for i in range(1, numDecoders + 1):
             decoder = GRU(
-                latentDim,
-                return_sequences=True,
-                return_state=True,
-                dropout=dropout,
-            )
-            decoderOutput, _ = decoder(decoderInput, initial_state=encoderState)
-
-        # dense
-        hidden = Dense(hidden, activation="relu")
+vanagari).
+        decoderInput = Input(shape=(None, len(tgtChar2Int)))
+        decoderOutput = decoderInput
+        for i in range(1, numDecoders + 1):
+            decoder = SimpleRNN(
+activation="relu")
         hiddenOutput = hidden(decoderOutput)
         decoderDense = Dense(len(tgtChar2Int), activation="softmax")
         decoderOutput = decoderDense(hiddenOutput)
@@ -377,12 +374,11 @@ def train():
 
     #Early stopping to stop the epoch if the accuracy is not increasing 
     earlystopping = EarlyStopping(
-        monitor="val_loss", min_delta=0.1, patience=2, verbose=2, mode="auto"
+        monitor="val_accuracy", min_delta=0.01, patience=5, verbose=2, mode="auto"
     )
 
-    model.fit(
-        [trainEncoderInput, trainDecoderInput],
-        trainDecoderTarget,
+         monitor="val_loss", min_delta=0.1, patience=2, verbose=2, mode="auto"
+Target,
         batch_size=config.batch_size,
         epochs=config.epochs,
         validation_data=([valEncoderInput, valDecoderInput], valDecoderTarget),
