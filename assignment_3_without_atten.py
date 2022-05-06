@@ -185,7 +185,7 @@ def DataProcessing(DATAPATH,source_lang = 'en', target_lang = "ta"):
 
 def build_configurable_model(cell_type,srcChar2Int,numEncoders,latentDim,dropout,tgtChar2Int,numDecoders,hidden):       
     if cell_type == "RNN":
-        # one encoder RNN which sequentially encodes the input character sequence (Latin)
+        # encoder
         encoderInput = Input(shape=(None, len(srcChar2Int)))
         encoderOutput = encoderInput
         for i in range(1, numEncoders + 1):
@@ -198,11 +198,83 @@ def build_configurable_model(cell_type,srcChar2Int,numEncoders,latentDim,dropout
             encoderOutput, state = encoder(encoderInput)
         encoderState = [state]
 
-        # one decoder RNN which takes the last state of the encoder as input and produces one output character at a time (Devanagari).
+        # decoder
         decoderInput = Input(shape=(None, len(tgtChar2Int)))
         decoderOutput = decoderInput
         for i in range(1, numDecoders + 1):
             decoder = SimpleRNN(
+                latentDim,
+                return_sequences=True,
+                return_state=True,
+                dropout=dropout,
+            )
+            decoderOutput, _ = decoder(decoderInput, initial_state=encoderState)
+
+        # dense
+        hidden = Dense(hidden, activation="relu")
+        hiddenOutput = hidden(decoderOutput)
+        decoderDense = Dense(len(tgtChar2Int), activation="softmax")
+        decoderOutput = decoderDense(hiddenOutput)
+        model = Model([encoderInput, decoderInput], decoderOutput)
+        
+        return model
+    
+    elif cell_type == "LSTM":
+        # encoder
+        encoderInput = Input(shape=(None, len(srcChar2Int)))
+        encoderOutput = encoderInput
+        for i in range(1, numEncoders + 1):
+            encoder = LSTM(
+                latentDim,
+                return_state=True,
+                return_sequences=True,
+                dropout=dropout,
+            )
+            encoderOutput, state_h, state_c = encoder(encoderOutput)
+        encoderState = [state_h, state_c]
+
+        # decoder
+        decoderInput = Input(shape=(None, len(tgtChar2Int)))
+        decoderOutput = decoderInput
+        for i in range(1, numDecoders + 1):
+            decoder = LSTM(
+                latentDim,
+                return_state=True,
+                return_sequences=True,
+                dropout=dropout,
+            )
+            decoderOutput, _, _ = decoder(
+                decoderOutput, initial_state=encoderState
+            )
+
+        # dense
+        hidden = Dense(hidden, activation="relu")
+        hiddenOutput = hidden(decoderOutput)
+        decoderDense = Dense(len(tgtChar2Int), activation="softmax")
+        decoderOutput = decoderDense(hiddenOutput)
+        model = Model([encoderInput, decoderInput], decoderOutput)
+        
+        return model
+    
+    elif cell_type == "GRU":
+        # encoder
+        encoderInput = Input(shape=(None, len(srcChar2Int)))
+        encoderOutput = encoderInput
+        for i in range(1, numEncoders + 1):
+            encoder = GRU(
+                latentDim,
+                return_state=True,
+                return_sequences=True,
+                dropout=dropout,
+            )
+            encoderOutput, state = encoder(encoderInput)
+        encoderState = [state]
+
+        # decoder
+        decoderInput = Input(shape=(None, len(tgtChar2Int)))
+        decoderOutput = decoderInput
+        for i in range(1, numDecoders + 1):
+            decoder = GRU(
                 latentDim,
                 return_sequences=True,
                 return_state=True,
